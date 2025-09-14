@@ -4,6 +4,7 @@ import React from 'react';
 // import styles from './Dashboard.module.css'; 
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { Link } from 'react-router-dom';
 
 const Dashboard = ({ user }) => {
   const handleLogout = async () => {
@@ -16,14 +17,25 @@ const Dashboard = ({ user }) => {
   };
 
   return (
-    // 2. Apply Tailwind classes directly in the JSX
-    <div className="max-w-md mx-auto mt-10 p-8 bg-white rounded-lg shadow-xl text-center">
+    <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-xl text-center">
       <h2 className="text-3xl font-bold text-green-600 mb-4">
         Welcome, {user.email}!
       </h2>
       <p className="text-gray-700 mb-8">
-        You have successfully logged into FitBuddy.
+        This is your personal health dashboard.
       </p>
+
+      {/* 2. Add Navigation Section */}
+      <nav className="mb-8 border-t border-b border-gray-200 py-4">
+        <Link 
+          to="/bmi-calculator" 
+          className="text-green-600 font-semibold hover:underline"
+        >
+          BMI Calculator & Tracker
+        </Link>
+        {/* We will add more links here later */}
+      </nav>
+
       <button 
         onClick={handleLogout}
         className="px-6 py-2 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 transition-colors duration-300"

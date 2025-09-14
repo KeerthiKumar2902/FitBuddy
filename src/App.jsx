@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import Dashboard from './components/Dashboard';
+import BMICalculatorPage from './pages/BMICalculatorPage';
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -42,6 +43,11 @@ function App() {
             <Dashboard user={user} />
           </ProtectedRoute>
         } 
+      />
+      {/* 2. Add the new route for the BMI calculator */}
+      <Route 
+        path="/bmi-calculator" 
+        element={ <ProtectedRoute user={user}><BMICalculatorPage user={user} /></ProtectedRoute> } 
       />
       <Route 
         path="/login" 
