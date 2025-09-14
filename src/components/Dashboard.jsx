@@ -1,10 +1,9 @@
 // src/components/Dashboard.jsx
 import React from 'react';
-// 1. Remove the CSS module import
-// import styles from './Dashboard.module.css'; 
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { Link } from 'react-router-dom';
+import DailyTip from './DailyTip'; // 1. Import the new component
 
 const Dashboard = ({ user }) => {
   const handleLogout = async () => {
@@ -25,7 +24,9 @@ const Dashboard = ({ user }) => {
         This is your personal health dashboard.
       </p>
 
-      {/* 2. Add Navigation Section */}
+      {/* 2. Render the DailyTip component here */}
+      <DailyTip />
+
       <nav className="mb-8 border-t border-b border-gray-200 py-4">
         <Link 
           to="/bmi-calculator" 
