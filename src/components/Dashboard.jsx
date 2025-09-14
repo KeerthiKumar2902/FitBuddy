@@ -39,6 +39,9 @@ const Dashboard = ({ user }) => {
         <div className="mt-12 text-center">
           {/* The <nav> section now includes the link to the new page */}
           <nav className="mb-8 border-t border-b border-gray-200 py-4 flex justify-center items-center gap-x-8">
+            <Link to="/profile" className="text-lg text-green-600 font-semibold hover:underline">
+                My Profile
+            </Link>
             <Link 
               to="/wellness-tracker" 
               className="text-lg text-green-600 font-semibold hover:underline"
@@ -51,6 +54,8 @@ const Dashboard = ({ user }) => {
             >
               BMI Calculator & Tracker
             </Link>
+            <Link to="/weekly-planner" className="text-lg text-green-600 font-semibold hover:underline">Weekly Meal Planner</Link>
+
           </nav>
 
           <button 
