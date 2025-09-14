@@ -5,7 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 // We only need to import the two main views now
 import AuthPage from './components/AuthPage';
-import Dashboard from './components/DashBoard';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
 function App() {
