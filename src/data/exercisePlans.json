@@ -1,0 +1,98 @@
+[
+  {
+    "id": "plan_underweight_strength",
+    "planName": "Strength & Muscle Building Foundation",
+    "targetBmiCategory": "Underweight",
+    "description": "This plan focuses on compound movements to build a solid strength base and support healthy weight gain through muscle development. Ensure you are eating in a slight calorie surplus.",
+    "focus": "Muscle Building",
+    "imageUrl": "https://images.pexels.com/photos/1954524/pexels-photo-1954524.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "weeklySchedule": [
+      { "day": "Day 1, 4", "activity": "Workout A" },
+      { "day": "Day 2, 5", "activity": "Workout B" },
+      { "day": "Day 3, 6, 7", "activity": "Rest & Recovery" }
+    ],
+    "exercises": [
+      { "name": "Goblet Squats", "setsReps": "3 sets of 8-12 reps", "videoUrl": "https://www.youtube.com/watch?v=Me_s_22B_T4" },
+      { "name": "Dumbbell Bench Press", "setsReps": "3 sets of 8-12 reps", "videoUrl": "https://www.youtube.com/watch?v=Kzpo_I9O-A4" },
+      { "name": "Dumbbell Rows", "setsReps": "3 sets of 10-12 reps per arm", "videoUrl": "https://www.youtube.com/watch?v=9efgc2_vO5U" },
+      { "name": "Romanian Deadlifts (Dumbbells)", "setsReps": "3 sets of 10-15 reps", "videoUrl": "https://www.youtube.com/watch?v=2-oCt-IMa_4" },
+      { "name": "Plank", "setsReps": "3 sets, hold for 30-60 seconds", "videoUrl": "https://www.youtube.com/watch?v=B296mZDhrP4" }
+    ]
+  },
+  {
+    "id": "plan_normal_strength",
+    "planName": "Full-Body Fitness Maintenance",
+    "targetBmiCategory": "Normal",
+    "description": "A 3-day per week plan to maintain and improve overall fitness and strength using a mix of bodyweight and dumbbell exercises.",
+    "focus": "Strength Training",
+    "imageUrl": "https://images.pexels.com/photos/3768916/pexels-photo-3768916.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "weeklySchedule": [
+      { "day": "Day 1 (e.g., Monday)", "activity": "Workout A" },
+      { "day": "Day 2 (e.g., Tuesday)", "activity": "Rest or Light Cardio" },
+      { "day": "Day 3 (e.g., Wednesday)", "activity": "Workout B" },
+      { "day": "Day 4 (e.g., Thursday)", "activity": "Rest" },
+      { "day": "Day 5 (e.g., Friday)", "activity": "Workout A" },
+      { "day": "Day 6 & 7", "activity": "Rest or Active Recovery" }
+    ],
+    "exercises": [
+      { "name": "Push-ups (or Knee Push-ups)", "setsReps": "3 sets to failure", "videoUrl": "https://www.youtube.com/watch?v=Pkj8RAd7p_c" },
+      { "name": "Lunges", "setsReps": "3 sets of 10-12 reps per leg", "videoUrl": "https://www.youtube.com/watch?v=gCpg8s-aizM" },
+      { "name": "Overhead Press (Dumbbells)", "setsReps": "3 sets of 8-12 reps", "videoUrl": "https://www.youtube.com/watch?v=B-aVuyAUYAY" },
+      { "name": "Bird-Dog", "setsReps": "3 sets of 10-12 reps per side", "videoUrl": "https://www.youtube.com/watch?v=wiFNA3sqjCA" }
+    ]
+  },
+  {
+    "id": "plan_overweight_foundation",
+    "planName": "Foundation Fitness",
+    "targetBmiCategory": "Overweight",
+    "description": "A beginner-friendly, low-impact routine to build a solid fitness foundation, focusing on consistency and safe movements.",
+    "focus": "Full Body & Cardio",
+    "imageUrl": "https://images.pexels.com/photos/4752861/pexels-photo-4752861.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "weeklySchedule": [
+      { "day": "Day 1, 3, 5", "activity": "Workout Session" },
+      { "day": "Day 2, 4, 6", "activity": "Active Rest: 30-minute walk" },
+      { "day": "Day 7", "activity": "Full Rest Day" }
+    ],
+    "exercises": [
+      { "name": "Marching in Place", "setsReps": "5 minutes as a warm-up", "videoUrl": "https://www.youtube.com/watch?v=k3_--S22-IQ" },
+      { "name": "Bodyweight Squats to a Chair", "setsReps": "3 sets of 10-12 reps", "videoUrl": "https://www.youtube.com/watch?v=63BEg9p_2yM" },
+      { "name": "Incline Push-ups (using a table or wall)", "setsReps": "3 sets of 8-10 reps", "videoUrl": "https://www.youtube.com/watch?v=a6YDbp_h_cI" },
+      { "name": "Glute Bridges", "setsReps": "3 sets of 12-15 reps", "videoUrl": "https://www.youtube.com/watch?v=8bbE64Nu_2Q" }
+    ]
+  },
+  {
+    "id": "plan_obesity_low_impact",
+    "planName": "Low-Impact Cardio & Mobility",
+    "targetBmiCategory": "Obesity",
+    "description": "A gentle routine designed to improve cardiovascular health and joint mobility without high-impact stress. Focus on consistency over intensity.",
+    "focus": "Cardio & Flexibility",
+    "imageUrl": "https://images.pexels.com/photos/863977/pexels-photo-863977.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "weeklySchedule": [
+      { "day": "Day 1, 2, 4, 5", "activity": "Workout Session" },
+      { "day": "Day 3, 6, 7", "activity": "Rest Day" }
+    ],
+    "exercises": [
+      { "name": "Seated Marching", "setsReps": "5 minutes as a warm-up", "videoUrl": "https://www.youtube.com/watch?v=1F7-6a53A_k" },
+      { "name": "Wall Sits", "setsReps": "3 sets, hold for 20-30 seconds", "videoUrl": "https://www.youtube.com/watch?v=y-wV4JuaQo4" },
+      { "name": "Wall Push-ups", "setsReps": "3 sets of 10-15 reps", "videoUrl": "https://www.youtube.com/watch?v=a6YDbp_h_cI" },
+      { "name": "Cat-Cow Stretch", "setsReps": "2 sets of 10 cycles", "videoUrl": "https://www.youtube.com/watch?v=5-1gVwym_eE" }
+    ]
+  },
+  {
+    "id": "plan_all_flexibility",
+    "planName": "Total Body Flexibility",
+    "targetBmiCategory": "Normal", 
+    "description": "A routine for anyone looking to improve flexibility, reduce stiffness, and increase range of motion. Can be done on its own or after a workout.",
+    "focus": "Flexibility & Mobility",
+    "imageUrl": "https://images.pexels.com/photos/3076516/pexels-photo-3076516.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "weeklySchedule": [
+      { "day": "As needed", "activity": "Perform routine 2-4 times a week" }
+    ],
+    "exercises": [
+      { "name": "Standing Hamstring Stretch", "setsReps": "30 seconds per leg", "videoUrl": "https://www.youtube.com/watch?v=3-o_S_84-cI" },
+      { "name": "Chest Stretch in Doorway", "setsReps": "30 seconds per side", "videoUrl": "https://www.youtube.com/watch?v=V6E-p-T5LyA" },
+      { "name": "Child's Pose", "setsReps": "Hold for 60 seconds", "videoUrl": "https://www.youtube.com/watch?v=2vJKOZG_hBA" },
+      { "name": "Lying Quad Stretch", "setsReps": "30 seconds per leg", "videoUrl": "https://www.youtube.com/watch?v=u1a_m51VIKk" }
+    ]
+  }
+]

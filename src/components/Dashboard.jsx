@@ -55,7 +55,9 @@ const Dashboard = ({ user }) => {
               BMI Calculator & Tracker
             </Link>
             <Link to="/weekly-planner" className="text-lg text-green-600 font-semibold hover:underline">Weekly Meal Planner</Link>
-
+            <Link to="/exercise-plans" className="text-lg text-green-600 font-semibold hover:underline">
+              Exercise Plans
+            </Link>
           </nav>
 
           <button 
