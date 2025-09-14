@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import Dashboard from './components/Dashboard';
 import BMICalculatorPage from './pages/BMICalculatorPage';
+import DailyWellnessPage from './pages/DailyWellnessPage';
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -48,6 +49,11 @@ function App() {
       <Route 
         path="/bmi-calculator" 
         element={ <ProtectedRoute user={user}><BMICalculatorPage user={user} /></ProtectedRoute> } 
+      />
+      {/** Daily Wellness Tracker */}
+      <Route 
+        path="/wellness-tracker" 
+        element={ <ProtectedRoute user={user}><DailyWellnessPage /></ProtectedRoute> } 
       />
       <Route 
         path="/login" 
