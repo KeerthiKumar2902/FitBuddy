@@ -26,5 +26,97 @@
   {
     "id": 7,
     "tip": "Take a 5-minute stretching break for every hour you sit. It helps prevent stiffness and improves blood circulation."
+  },
+  {
+    "id": 8,
+    "tip": "Include strength training exercises at least twice a week. Building muscle supports metabolism and bone health."
+  },
+  {
+    "id": 9,
+    "tip": "Eat a protein-rich breakfast to boost energy, reduce cravings, and maintain focus throughout the day."
+  },
+  {
+    "id": 10,
+    "tip": "Limit screen time before bed. Blue light from devices can disrupt your sleep cycle and reduce melatonin production."
+  },
+  {
+    "id": 11,
+    "tip": "Carry healthy snacks like nuts or fruits to avoid unhealthy food choices when hunger strikes unexpectedly."
+  },
+  {
+    "id": 12,
+    "tip": "Practice deep breathing or meditation daily. It reduces stress, improves focus, and enhances mental well-being."
+  },
+  {
+    "id": 13,
+    "tip": "Keep regular meal times. Consistency helps regulate digestion, metabolism, and energy levels."
+  },
+  {
+    "id": 14,
+    "tip": "Walk at least 30 minutes a day. Regular walking lowers the risk of heart disease, diabetes, and obesity."
+  },
+  {
+    "id": 15,
+    "tip": "Limit processed foods and opt for whole, natural ingredients to provide your body with essential nutrients."
+  },
+  {
+    "id": 16,
+    "tip": "Spend at least 10 minutes outdoors in natural sunlight daily. It helps regulate circadian rhythm and boosts vitamin D."
+  },
+  {
+    "id": 17,
+    "tip": "Chew sugar-free gum after meals to stimulate saliva and improve oral health."
+  },
+  {
+    "id": 18,
+    "tip": "Maintain good posture while sitting or standing to protect your spine and prevent chronic back pain."
+  },
+  {
+    "id": 19,
+    "tip": "Schedule regular health check-ups. Early detection can prevent or manage chronic illnesses more effectively."
+  },
+  {
+    "id": 20,
+    "tip": "Use smaller plates for meals. It naturally encourages portion control and reduces overeating."
+  },
+  {
+    "id": 21,
+    "tip": "Keep a gratitude journal. Reflecting on positives reduces stress and supports mental well-being."
+  },
+  {
+    "id": 22,
+    "tip": "Replace refined grains with whole grains like brown rice, oats, and quinoa for better digestion and energy."
+  },
+  {
+    "id": 23,
+    "tip": "Stretch before bed to relax your muscles, ease tension, and improve sleep quality."
+  },
+  {
+    "id": 24,
+    "tip": "Try interval training during workouts. Alternating intensity boosts cardiovascular fitness and burns more calories."
+  },
+  {
+    "id": 25,
+    "tip": "Limit salt intake by seasoning meals with herbs and spices. Excess sodium increases blood pressure risk."
+  },
+  {
+    "id": 26,
+    "tip": "Listen to your body’s hunger and fullness cues instead of eating by the clock."
+  },
+  {
+    "id": 27,
+    "tip": "Wash your hands frequently to reduce the risk of infections and illnesses."
+  },
+  {
+    "id": 28,
+    "tip": "Spend time with loved ones. Strong social connections improve emotional health and longevity."
+  },
+  {
+    "id": 29,
+    "tip": "Alternate between sitting and standing while working to reduce strain and increase energy."
+  },
+  {
+    "id": 30,
+    "tip": "Try to reduce caffeine intake after 4 PM to prevent sleep disturbances."
   }
 ]
