@@ -1,7 +1,6 @@
 // src/pages/BMICalculatorPage.jsx
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
-// --- 1. ADDED: Firebase imports for deletion ---
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, writeBatch } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -35,7 +34,6 @@ const BMICalculatorPage = ({ user }) => {
           const latestEntry = historyData[historyData.length - 1];
           updateDisplayData(latestEntry.bmi, latestEntry.height || height);
         } else {
-          // --- 2. CRUCIAL FIX: This ensures the display resets when history is empty ---
           setDisplayData({ bmi: null, category: '', range: null });
         }
       });
@@ -74,7 +72,7 @@ const BMICalculatorPage = ({ user }) => {
     try {
       await addDoc(collection(db, "users", user.uid, "bmiHistory"), {
         bmi: newBmiResult,
-        height: parseFloat(height), // Save height with the record
+        height: parseFloat(height),
         timestamp: serverTimestamp()
       });
       setNewBmiResult(null);
@@ -85,7 +83,6 @@ const BMICalculatorPage = ({ user }) => {
     }
   };
 
-  // --- 3. ADDED: Function to handle resetting history ---
   const handleResetHistory = async () => {
     if (!user || history.length === 0) return;
     const isConfirmed = window.confirm("Are you sure you want to delete all your BMI history? This action cannot be undone.");
@@ -99,7 +96,6 @@ const BMICalculatorPage = ({ user }) => {
           batch.delete(doc.ref);
         });
         await batch.commit();
-        console.log("History successfully deleted!");
       } catch (error) {
         console.error("Error deleting history: ", error);
       }
@@ -107,7 +103,12 @@ const BMICalculatorPage = ({ user }) => {
   };
 
   const displayStyle = getBmiStyle(displayData.category);
-  const insights = { /* ... insights object remains the same ... */ };
+  const insights = { 
+      'Underweight': "A balanced diet with sufficient nutrients can help in reaching a healthy weight. Consider consulting a professional for personalized advice.",
+      'Normal weight': "Excellent! Maintaining a balanced diet and regular physical activity will help you stay in this healthy range.",
+      'Overweight': "Small, consistent changes to your diet and exercise routine can lead to significant long-term health benefits.",
+      'Obesity': "Focusing on a healthier lifestyle is a great step. Professional guidance from a doctor or dietitian can be very effective."
+   };
   const chartData = history.map(entry => ({
     date: entry.timestamp ? new Date(entry.timestamp.seconds * 1000).toLocaleDateString() : 'N/A',
     bmi: entry.bmi
@@ -123,30 +124,26 @@ const BMICalculatorPage = ({ user }) => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-8">
-            {/* Calculator Card - UNCHANGED */}
             <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200">
-              {/* ... form content is exactly the same as your working code ... */}
               <div className="flex items-center gap-3 mb-4">
                   <div className="bg-green-100 p-2 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></div>
                   <h2 className="text-xl font-bold text-gray-800">BMI Calculator</h2>
               </div>
               <form onSubmit={calculateBmi} className="space-y-4">
                   <div>
-                      <label className="block mb-1 font-semibold text-gray-600 text-sm">Height (cm)</label>
-                      <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} required className="w-full px-4 py-2 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <label htmlFor="heightInput" className="block mb-1 font-semibold text-gray-600 text-sm">Height (cm)</label>
+                      <input id="heightInput" type="number" value={height} onChange={(e) => setHeight(e.target.value)} required className="w-full px-4 py-2 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
                   <div>
-                      <label className="block mb-1 font-semibold text-gray-600 text-sm">Weight (kg)</label>
-                      <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} required className="w-full px-4 py-2 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <label htmlFor="weightInput" className="block mb-1 font-semibold text-gray-600 text-sm">Weight (kg)</label>
+                      <input id="weightInput" type="number" value={weight} onChange={(e) => setWeight(e.target.value)} required className="w-full px-4 py-2 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
                   <button type="submit" className={`w-full py-3 px-4 text-white font-semibold rounded-lg bg-gradient-to-r ${displayStyle.from} ${displayStyle.to} hover:opacity-90 transition-opacity shadow-md`}>Calculate</button>
               </form>
             </div>
 
-            {/* Always-Visible Insights Card - UNCHANGED */}
             {displayData.bmi && (
               <div className={`p-6 rounded-2xl shadow-lg border-l-4 ${displayStyle.border} ${displayStyle.bg}`}>
-                {/* ... insights content is exactly the same as your working code ... */}
                 <p className="font-semibold text-gray-700">{newBmiResult ? "Your New Result" : "Your Latest BMI"}</p>
                 <p className={`text-6xl font-bold ${displayStyle.text}`}>{displayData.bmi}</p>
                 <p className={`text-2xl font-semibold -mt-1 ${displayStyle.text}`}>{displayData.category}</p>
@@ -167,7 +164,6 @@ const BMICalculatorPage = ({ user }) => {
           </div>
 
           <div className="lg:col-span-2 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200">
-            {/* --- 4. ADDED: Reset button to the card header --- */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg></div>
@@ -184,7 +180,6 @@ const BMICalculatorPage = ({ user }) => {
               )}
             </div>
             
-            {/* Chart and History List - UNCHANGED */}
             {history.length > 1 ? (
               <div className="h-80 -ml-4">
                 <ResponsiveContainer width="100%" height="100%">
