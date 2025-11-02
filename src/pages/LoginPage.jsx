@@ -69,26 +69,36 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="relative flex flex-col m-6 space-y-8 bg-white shadow-2xl rounded-2xl md:flex-row md:space-y-0">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="relative flex flex-col w-full max-w-4xl bg-white shadow-2xl rounded-2xl md:flex-row">
         
         {/* Left Side: Image and Branding */}
-        <div className="relative md:w-1/2 h-96 md:h-auto">
+        <div className="relative md:w-1/2">
           <img
             src="https://images.pexels.com/photos/4752861/pexels-photo-4752861.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
             alt="Man holding a kettlebell in a gym"
             className="w-full h-64 md:h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-start p-10 text-white rounded-l-2xl">
-            <h2 className="text-4xl font-extrabold mb-2">FitBuddy</h2>
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-10 text-white rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none">
+            {/* Removed the "FitBuddy" text from here */}
             <p className="text-lg">Your daily partner in achieving wellness. Welcome back!</p>
           </div>
         </div>
 
         {/* Right Side: Login Form */}
         <div className="w-full md:w-1/2 p-8 md:p-14">
-          <h2 className="font-bold text-3xl text-gray-800">Sign In</h2>
-          <p className="text-sm font-normal text-gray-600 mb-8">Ready to continue your journey?</p>
+          
+          {/* Added the logo image here */}
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/fitbuddy-transparent.png" 
+              alt="FitBuddy Logo" 
+              className="w-48" 
+            />
+          </div>
+
+          <h2 className="font-bold text-3xl text-gray-800 text-center">Sign In</h2>
+          <p className="text-sm font-normal text-gray-600 mb-8 text-center">Ready to continue your journey?</p>
           
           {message && <p className="mb-4 text-center text-sm font-medium text-green-600">{message}</p>}
           {error && <p className="mb-4 text-center text-sm font-medium text-red-600">{error}</p>}
@@ -110,11 +120,15 @@ const LoginPage = () => {
               required
               className="w-full p-3 border border-gray-300 rounded-md placeholder:font-light focus:outline-none focus:ring-2 focus:ring-green-500"
             />
+            
+            {/* --- THIS IS THE CORRECTED CODE BLOCK --- */}
             <div className="flex justify-end text-sm">
               <button type="button" onClick={handlePasswordReset} className="font-medium text-green-600 hover:text-green-500">
                 Forgot your password?
               </button>
             </div>
+            {/* --- END OF FIX --- */}
+
             <button type="submit" className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
               Sign in
             </button>

@@ -54,30 +54,33 @@ const Dashboard = ({ user }) => {
     return "Good evening";
   };
   
-  // Get the user's first name, or a fallback
   const firstName = profileData.name ? profileData.name.split(' ')[0] : (user.email.split('@')[0]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* --- 1. UPDATED NAVBAR --- */}
+      {/* --- 1. NAVBAR --- */}
       <nav className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Left Side: App Name/Logo */}
+            
+            {/* --- 2. THIS IS THE UPDATED LOGO --- */}
             <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-green-600">
-                FitBuddy
+              <Link to="/" className="flex items-center">
+                {/* Image placed from your /public folder */}
+                <img 
+                  className="h-8 w-auto" 
+                  src="/fitbuddy-transparent.png" 
+                  alt="FitBuddy Logo" 
+                />
               </Link>
             </div>
             
-            {/* --- 2. UPDATED: Right Side Layout --- */}
+            {/* --- Right Side Layout (Unchanged) --- */}
             <div className="flex items-center gap-4">
-              {/* ADDED: User Name */}
               <span className="font-semibold text-gray-700 hidden lg:block">
                 {firstName}
               </span>
               
-              {/* ADDED: User Profile Picture */}
               {profileData.photoURL ? (
                 <img src={profileData.photoURL} alt="Profile" className="w-9 h-9 rounded-full object-cover border-2 border-gray-200" />
               ) : (
@@ -86,13 +89,11 @@ const Dashboard = ({ user }) => {
                 </div>
               )}
 
-              {/* KEPT: My Profile Link */}
               <Link to="/profile" className="flex items-center gap-2 text-gray-600 hover:text-green-600">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 <span className="font-medium hidden sm:block">My Profile</span>
               </Link>
               
-              {/* KEPT: Logout Button */}
               <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 <span className="font-medium hidden sm:block">Logout</span>
