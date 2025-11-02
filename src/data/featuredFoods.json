@@ -1,0 +1,42 @@
+[
+  {
+    "id": 9003,
+    "name": "Apple",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/apple.jpg"
+  },
+  {
+    "id": 9040,
+    "name": "Banana",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/bananas.jpg"
+  },
+  {
+    "id": 11090,
+    "name": "Broccoli",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/broccoli.jpg"
+  },
+  {
+    "id": 11124,
+    "name": "Carrot",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/carrots.jpg"
+  },
+  {
+    "id": 5062,
+    "name": "Chicken Breast",
+    "imageUrl": "https://images.pexels.com/photos/3688/food-dinner-lunch-chicken.jpg"
+  },
+  {
+    "id": 16069,
+    "name": "Lentils",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/lentils-brown.jpg"
+  },
+  {
+    "id": 11457,
+    "name": "Spinach",
+    "imageUrl": "https://spoonacular.com/cdn/ingredients_500x500/spinach.jpg"
+  },
+  {
+    "id": 10211821,
+    "name": "Bell Pepper",
+    "imageUrl": "https://images.pexels.com/photos/1434254/pexels-photo-1434254.jpeg"
+  }
+]

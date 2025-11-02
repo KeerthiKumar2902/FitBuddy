@@ -12,6 +12,7 @@ import DailyWellnessPage from './pages/DailyWellnessPage';
 import WeeklyMealPlannerPage from './pages/WeeklyMealPlannerPage';
 import ProfilePage from './pages/ProfilePage';
 import ExercisePlansPage from './pages/ExercisePlansPage';
+import NutritionHubPage from './pages/NutritionHubPage';
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -77,6 +78,10 @@ function App() {
       <Route 
         path="/exercise-plans" 
         element={ <ProtectedRoute user={user}><ExercisePlansPage /></ProtectedRoute> } 
+      />
+      <Route 
+        path="/nutrition-hub" 
+        element={ <ProtectedRoute user={user}><NutritionHubPage /></ProtectedRoute> } 
       />
     </Routes>
   );
