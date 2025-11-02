@@ -13,6 +13,7 @@ import WeeklyMealPlannerPage from './pages/WeeklyMealPlannerPage';
 import ProfilePage from './pages/ProfilePage';
 import ExercisePlansPage from './pages/ExercisePlansPage';
 import NutritionHubPage from './pages/NutritionHubPage';
+import WeeklySummaryPage from './pages/WeeklySummaryPage';
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -82,6 +83,10 @@ function App() {
       <Route 
         path="/nutrition-hub" 
         element={ <ProtectedRoute user={user}><NutritionHubPage /></ProtectedRoute> } 
+      />
+      <Route 
+        path="/weekly-summary" 
+        element={ <ProtectedRoute user={user}><WeeklySummaryPage /></ProtectedRoute> } 
       />
     </Routes>
   );
