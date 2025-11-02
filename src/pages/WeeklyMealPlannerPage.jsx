@@ -5,14 +5,12 @@ import { auth, db } from '../firebase';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 
-// Helper function to get the start of the current week (Monday) in YYYY-MM-DD format
-const getStartOfWeekId = () => {
-  const today = new Date();
-  const day = today.getDay(); // Sunday - 0, Monday - 1, ...
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  const monday = new Date(new Date(today).setDate(diff));
-  return monday.toISOString().split('T')[0];
-};
+// --- 1. REMOVED ---
+// We no longer need the getStartOfWeekId function.
+
+// --- 2. ADDED ---
+// We define a single, constant ID for the user's plan document.
+const PLAN_DOCUMENT_ID = "latestPlan";
 
 const WeeklyMealPlannerPage = () => {
   const [weeklyPlan, setWeeklyPlan] = useState(null);
@@ -27,7 +25,6 @@ const WeeklyMealPlannerPage = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().toLocaleString('en-us', { weekday: 'long' }).toLowerCase());
 
   const user = auth.currentUser;
-  const startOfWeekId = getStartOfWeekId();
 
   // useEffect now listens for REAL-TIME updates to both profile and plans
   useEffect(() => {
@@ -38,8 +35,9 @@ const WeeklyMealPlannerPage = () => {
         setUserProfile(docSnap.exists() ? docSnap.data() : {});
       });
 
-      // Listen for weekly plan updates
-      const planDocRef = doc(db, "users", user.uid, "weeklyPlans", startOfWeekId);
+      // --- 3. CHANGED ---
+      // Listen for weekly plan updates using our constant document ID
+      const planDocRef = doc(db, "users", user.uid, "weeklyPlans", PLAN_DOCUMENT_ID);
       const unsubPlan = onSnapshot(planDocRef, (docSnap) => {
         setWeeklyPlan(docSnap.exists() ? docSnap.data() : {});
         setLoading(false);
@@ -51,7 +49,9 @@ const WeeklyMealPlannerPage = () => {
         unsubPlan();
       };
     }
-  }, [user, startOfWeekId]);
+    // --- 4. CHANGED ---
+    // Removed startOfWeekId from the dependency array
+  }, [user]);
 
   const generatePlan = async (e) => {
     e.preventDefault();
@@ -63,16 +63,15 @@ const WeeklyMealPlannerPage = () => {
     setIsGenerating(true);
     setError('');
 
+    // ... (The entire smart calculation logic for BMR, TDEE, and calories remains exactly the same) ...
     let bmr;
     if (userProfile.gender === 'male') {
       bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * userProfile.age + 5;
     } else {
       bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * userProfile.age - 161;
     }
-
     const activityMultipliers = { sedentary: 1.2, lightly_active: 1.375, moderately_active: 1.55, very_active: 1.725 };
     const tdee = bmr * activityMultipliers[userProfile.activityLevel];
-
     let targetCalories;
     if (goal === 'lose') targetCalories = Math.round(tdee - 500);
     else if (goal === 'gain') targetCalories = Math.round(tdee + 300);
@@ -88,7 +87,10 @@ const WeeklyMealPlannerPage = () => {
       const data = await response.json();
 
       const planToSave = { generatedAt: new Date(), targetCalories, diet, goal, weekData: data.week };
-      const docRef = doc(db, "users", user.uid, "weeklyPlans", startOfWeekId);
+      
+      // --- 5. CHANGED ---
+      // Save the plan to our constant document ID
+      const docRef = doc(db, "users", user.uid, "weeklyPlans", PLAN_DOCUMENT_ID);
       await setDoc(docRef, planToSave);
 
     } catch (err) {
@@ -125,7 +127,7 @@ const WeeklyMealPlannerPage = () => {
           // RENDER THE PLAN if it exists
           <div>
             <div className="text-center mb-6">
-              <h1 className="text-4xl font-bold text-gray-800">Your Meal Plan for the Week</h1>
+              <h1 className="text-4xl font-bold text-gray-800">Your Current Meal Plan</h1>
               <p className="text-lg text-gray-600">Target: {weeklyPlan.targetCalories} kcal/day {weeklyPlan.diet && `(${weeklyPlan.diet})`}</p>
             </div>
 
@@ -152,6 +154,7 @@ const WeeklyMealPlannerPage = () => {
               ))}
             </div>
             <div className="text-center mt-8">
+              {/* This button will now trigger the generation form to appear */}
               <button onClick={() => setWeeklyPlan({})} className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg">Generate a New Plan</button>
             </div>
           </div>
