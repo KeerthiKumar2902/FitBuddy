@@ -3,7 +3,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
-// 1. Load environment variables
 require("dotenv").config(); 
 
 admin.initializeApp();
@@ -11,63 +10,71 @@ admin.initializeApp();
 exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     
-    // We expect an "action" field to decide what to do
-    // action: 'exchange_token' OR 'fetch_data'
     const { action } = req.body;
+    const clientId = process.env.FITBIT_CLIENT_ID;
+    const clientSecret = process.env.FITBIT_CLIENT_SECRET;
 
-    // --- CASE 1: EXCHANGE TOKEN (Login) ---
+    if (!clientId || !clientSecret) {
+      console.error("Missing Fitbit environment variables");
+      return res.status(500).json({ error: "Server misconfiguration" });
+    }
+
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+    const fitbitTokenUrl = "https://api.fitbit.com/oauth2/token";
+    const headers = {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    };
+
+    // --- CASE 1: EXCHANGE CODE (Login) ---
     if (action === 'exchange_token') {
       const { code, redirect_uri } = req.body;
-      
-      // 2. Use process.env to access the secrets
-      // Make sure these match the variable names in your functions/.env file
-      const clientId = process.env.FITBIT_CLIENT_ID;
-      const clientSecret = process.env.FITBIT_CLIENT_SECRET;
-
-      // Safety check to ensure keys are loaded
-      if (!clientId || !clientSecret) {
-        console.error("Missing Fitbit environment variables");
-        return res.status(500).json({ error: "Server misconfiguration" });
-      }
-
-      const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
       try {
         const response = await axios.post(
-          "https://api.fitbit.com/oauth2/token",
+          fitbitTokenUrl,
           new URLSearchParams({
             client_id: clientId,
             grant_type: "authorization_code",
             redirect_uri: redirect_uri,
             code: code,
           }).toString(),
-          {
-            headers: {
-              "Authorization": `Basic ${credentials}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-          }
+          { headers }
         );
         return res.status(200).json(response.data);
       } catch (error) {
-        return res.status(500).json({ 
-          error: error.message, 
+        return res.status(500).json({ error: error.message, details: error.response?.data });
+      }
+    }
+
+    // --- CASE 2: REFRESH TOKEN (New Feature) ---
+    if (action === 'refresh_token') {
+      const { refresh_token } = req.body;
+      try {
+        const response = await axios.post(
+          fitbitTokenUrl,
+          new URLSearchParams({
+            grant_type: "refresh_token",
+            refresh_token: refresh_token,
+          }).toString(),
+          { headers }
+        );
+        return res.status(200).json(response.data);
+      } catch (error) {
+        console.error("Refresh Error:", error.response?.data);
+        // Return the specific status code (e.g., 400 or 401) so frontend knows it failed
+        return res.status(error.response?.status || 500).json({ 
+          error: "Failed to refresh token", 
           details: error.response?.data 
         });
       }
     }
 
-    // --- CASE 2: FETCH DATA (Sync) ---
-    // This proxies the request to Fitbit on behalf of the user
+    // --- CASE 3: FETCH DATA (Sync) ---
     if (action === 'fetch_data') {
       const { accessToken, endpoint } = req.body;
-
-      if (!accessToken || !endpoint) {
-        return res.status(400).json({ error: "Missing accessToken or endpoint" });
-      }
+      if (!accessToken || !endpoint) return res.status(400).json({ error: "Missing params" });
 
       try {
-        // We make the call from the server, avoiding CORS
         const response = await axios.get(endpoint, {
           headers: {
             "Authorization": `Bearer ${accessToken}`,
@@ -76,7 +83,7 @@ exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
         });
         return res.status(200).json(response.data);
       } catch (error) {
-        console.error("Data Fetch Error:", error.response?.data);
+        // Pass the 401 error back to frontend so we know to refresh
         return res.status(error.response?.status || 500).json({ 
           error: "Failed to fetch data", 
           details: error.response?.data 

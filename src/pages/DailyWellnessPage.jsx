@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { getFitbitAuthUrl, fetchFitbitDataForDate } from '../services/fitbitService';
+import { getFitbitAuthUrl, fetchFitbitDataForDate, refreshFitbitToken } from '../services/fitbitService';
 
 // Import Components
 import DateNavigator from '../components/wellness/DateNavigator';
@@ -14,8 +14,8 @@ import SyncHeader from '../components/wellness/SyncHeader';
 import ActivityRings from '../components/wellness/ActivityRings';
 import SleepStagesCard from '../components/wellness/SleepStagesCard';
 import HeartRateCard from '../components/wellness/HeartRateCard';
+import MetricCard from '../components/wellness/MetricCard';
 
-// Goal Definitions
 const BIO_GOALS = {
   steps: { label: 'Steps', target: 10000, unit: 'steps', increment: 500 },
   calories: { label: 'Calories', target: 2500, unit: 'kcal', increment: 50 },
@@ -33,9 +33,10 @@ const DEFAULT_GOALS = { ...BIO_GOALS, ...HABIT_GOALS };
 const DailyWellnessPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   
-  // --- 1. NEW STATE: Track connection status independently of daily progress ---
+  // Track connection status independently
   const [isFitbitConnected, setIsFitbitConnected] = useState(false);
 
+  // Expanded State
   const [progress, setProgress] = useState({
     steps: 0, stepsSource: 'manual',
     calories: 0, caloriesSource: 'manual',
@@ -43,9 +44,13 @@ const DailyWellnessPage = () => {
     sleepHours: 0, sleepSource: 'manual',
     sleepStages: { deep: 0, light: 0, rem: 0, awake: 0 },
     restingHeartRate: 0, heartRateSource: 'manual',
+    
+    // Extra Data
+    distanceKm: 0, elevation: 0, sedentaryMinutes: 0, lightlyActiveMinutes: 0, fairlyActiveMinutes: 0, veryActiveMinutes: 0,
+
     waterIntake: 0, mindfulnessMinutes: 0, screenTimeHours: 0,
     mood: '', journal: '',
-    syncStatus: { lastSynced: null } // Removed isConnected from here
+    syncStatus: { lastSynced: null }
   });
 
   const [goalTargets, setGoalTargets] = useState(DEFAULT_GOALS);
@@ -57,7 +62,7 @@ const DailyWellnessPage = () => {
   const formattedDate = selectedDate.toISOString().split('T')[0];
   const user = auth.currentUser;
 
-  // --- 2. NEW EFFECT: Check if the user has a Fitbit Token stored ---
+  // 1. Check Fitbit Connection
   useEffect(() => {
     if (user) {
       const checkConnection = async () => {
@@ -75,7 +80,7 @@ const DailyWellnessPage = () => {
     }
   }, [user]);
 
-  // 3. Fetch Custom Goals
+  // 2. Fetch Custom Goals
   useEffect(() => {
     if (user) {
       const unsub = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
@@ -89,7 +94,7 @@ const DailyWellnessPage = () => {
     }
   }, [user]);
 
-  // 4. Fetch Daily Progress
+  // 3. Fetch Daily Progress
   useEffect(() => {
     if (user) {
       setLoading(true);
@@ -98,6 +103,7 @@ const DailyWellnessPage = () => {
           steps: 0, calories: 0, activeMinutes: 0, 
           sleepHours: 0, sleepStages: { deep: 0, light: 0, rem: 0, awake: 0 },
           restingHeartRate: 0,
+          distanceKm: 0, elevation: 0, sedentaryMinutes: 0, lightlyActiveMinutes: 0, fairlyActiveMinutes: 0, veryActiveMinutes: 0,
           waterIntake: 0, mindfulnessMinutes: 0, screenTimeHours: 0,
           mood: '', journal: '',
           syncStatus: { lastSynced: null }
@@ -156,7 +162,8 @@ const DailyWellnessPage = () => {
     window.location.href = authUrl;
   };
 
-  const handleSyncNow = async () => {
+  // --- SMART SYNC LOGIC ---
+  const performSmartSync = async (datesToSync) => {
     setIsSyncing(true);
     try {
       const tokenRef = doc(db, 'users', user.uid, 'private', 'fitbit_tokens');
@@ -164,43 +171,29 @@ const DailyWellnessPage = () => {
 
       if (!tokenSnap.exists()) {
         showToast("No Fitbit connection found.");
-        setIsFitbitConnected(false); // Update state if token is missing
+        setIsFitbitConnected(false);
         setIsSyncing(false);
         return;
       }
 
-      const { accessToken } = tokenSnap.data();
+      let { accessToken, refreshToken } = tokenSnap.data();
 
-      // Loop through the last 7 days (including today)
-      const datesToSync = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        datesToSync.push(d.toISOString().split('T')[0]);
-      }
-
-      console.log("Starting sync loop for:", datesToSync);
-
-      for (const date of datesToSync) {
-        const fitbitData = await fetchFitbitDataForDate(accessToken, date);
+      // Function to process a single date
+      const processDate = async (token, date) => {
+        const fitbitData = await fetchFitbitDataForDate(token, date);
         
         if (fitbitData && fitbitData.activity && fitbitData.sleep) {
-          // --- Parse Activity ---
+          // Parse Data
           const summary = fitbitData.activity.summary;
           const steps = summary.steps || 0;
           const calories = summary.caloriesOut || 0;
-          
-          const fair = summary.fairlyActiveMinutes || 0;
-          const very = summary.veryActiveMinutes || 0;
-          const activeMinutes = fair + very;
+          const activeMinutes = (summary.fairlyActiveMinutes || 0) + (summary.veryActiveMinutes || 0);
 
-          // Extended Metrics
           const distanceKm = summary.distances?.find(d => d.activity === 'total')?.distance || 0;
           const sedentaryMinutes = summary.sedentaryMinutes || 0;
           const lightlyActiveMinutes = summary.lightlyActiveMinutes || 0;
           const elevation = summary.elevation || 0;
 
-          // --- Parse Sleep ---
           const mainSleep = fitbitData.sleep.sleep?.[0]; 
           const sleepHours = mainSleep ? (mainSleep.duration / (1000 * 60 * 60)).toFixed(1) : 0;
           
@@ -214,12 +207,10 @@ const DailyWellnessPage = () => {
             };
           }
 
-          // --- Parse Heart Rate ---
           const restingHeartRate = fitbitData.heart?.['activities-heart']?.[0]?.value?.restingHeartRate || 0;
 
-          // --- Save to Firestore ---
+          // Save to Firestore
           const dailyRef = doc(db, "users", user.uid, "dailyProgress", date);
-          
           await setDoc(dailyRef, {
             steps, stepsSource: 'fitbit',
             calories, caloriesSource: 'fitbit',
@@ -228,24 +219,72 @@ const DailyWellnessPage = () => {
             sleepStages,
             restingHeartRate, heartRateSource: 'fitbit',
             distanceKm, elevation, sedentaryMinutes, lightlyActiveMinutes,
-            
-            // We only save the timestamp of the sync here
-            syncStatus: { lastSynced: new Date().toISOString() },
+            syncStatus: { isConnected: true, lastSynced: new Date().toISOString() },
             timestamp: serverTimestamp()
           }, { merge: true });
           
           console.log(`Synced data for ${date}`);
         }
+      };
+
+      // Loop through dates
+      for (const date of datesToSync) {
+        try {
+          await processDate(accessToken, date);
+        } catch (error) {
+          // Auto-Refresh Logic
+          if (error.message.includes('401') || error.status === 401) {
+            console.log("Token expired! Attempting refresh...");
+            try {
+              const newTokens = await refreshFitbitToken(refreshToken);
+              
+              await setDoc(tokenRef, {
+                accessToken: newTokens.access_token,
+                refreshToken: newTokens.refresh_token,
+                expiresIn: newTokens.expires_in,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+              
+              accessToken = newTokens.access_token;
+              refreshToken = newTokens.refresh_token;
+
+              await processDate(accessToken, date);
+              
+            } catch (refreshError) {
+              console.error("Fatal: Could not refresh token.", refreshError);
+              showToast("Connection expired. Please reconnect Fitbit.");
+              setIsFitbitConnected(false);
+              return; 
+            }
+          }
+        }
       }
-
-      showToast("Sync complete! Last 7 days updated.");
-
+      showToast("Sync complete!");
     } catch (error) {
       console.error("Sync Error:", error);
       showToast("Sync failed. Check console.");
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // --- UPDATED HANDLERS ---
+  
+  // 1. Sync ONLY the currently selected date
+  const handleSyncCurrentView = () => {
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    performSmartSync([dateStr]);
+  };
+
+  // 2. Sync the last 7 days (Bulk)
+  const handleSyncHistory = () => {
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+    performSmartSync(dates);
   };
 
   return (
@@ -263,11 +302,11 @@ const DailyWellnessPage = () => {
         <DateNavigator selectedDate={selectedDate} changeDay={changeDay} />
 
         <SyncHeader 
-          // --- 5. USE NEW STATE: Pass the persistent connection state ---
           isConnected={isFitbitConnected} 
           lastSynced={progress.syncStatus?.lastSynced ? new Date(progress.syncStatus.lastSynced).toLocaleTimeString() : null}
           onConnect={handleConnectFitbit}
-          onSync={handleSyncNow}
+          onSyncCurrentView={handleSyncCurrentView}   // Pass the Single-Day handler
+          onSyncHistory={handleSyncHistory} // Pass the History handler
           isSyncing={isSyncing}
         />
 

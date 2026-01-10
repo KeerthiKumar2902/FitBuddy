@@ -1,10 +1,10 @@
+// src/components/wellness/SyncHeader.jsx
 import React from 'react';
 
-const SyncHeader = ({ isConnected, lastSynced, onConnect, onSync, isSyncing }) => {
+const SyncHeader = ({ isConnected, lastSynced, onConnect, onSyncCurrentView, onSyncHistory, isSyncing }) => {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 transition-all duration-300 hover:shadow-md">
       <div className="flex items-center gap-4">
-        {/* Animated Icon Container */}
         <div className={`p-3 rounded-full ${isConnected ? 'bg-teal-50' : 'bg-gray-100'} relative`}>
           {isSyncing && (
             <div className="absolute inset-0 rounded-full border-2 border-teal-400 border-t-transparent animate-spin"></div>
@@ -34,20 +34,38 @@ const SyncHeader = ({ isConnected, lastSynced, onConnect, onSync, isSyncing }) =
 
       <div>
         {isConnected ? (
-          <button 
-            onClick={onSync}
-            disabled={isSyncing}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all transform active:scale-95 ${
-              isSyncing 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {isSyncing ? 'Syncing...' : 'Sync Now'}
-          </button>
+          <div className="flex gap-2">
+            {/* Sync Current View Button */}
+            <button 
+              onClick={onSyncCurrentView}
+              disabled={isSyncing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all transform active:scale-95 ${
+                isSyncing 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200'
+              }`}
+            >
+              {isSyncing ? (
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              )}
+              {isSyncing ? 'Syncing...' : 'Sync This Day'}
+            </button>
+
+            {/* Sync History Button */}
+            <button 
+              onClick={onSyncHistory}
+              disabled={isSyncing}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all transform active:scale-95 border border-gray-300 ${
+                isSyncing 
+                  ? 'bg-gray-50 text-gray-300 cursor-not-allowed' 
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Sync Last 7 Days
+            </button>
+          </div>
         ) : (
           <button 
             onClick={onConnect}
