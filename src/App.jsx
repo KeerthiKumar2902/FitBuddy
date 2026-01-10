@@ -14,6 +14,7 @@ import ProfilePage from './pages/ProfilePage';
 import ExercisePlansPage from './pages/ExercisePlansPage';
 import NutritionHubPage from './pages/NutritionHubPage';
 import WeeklySummaryPage from './pages/WeeklySummaryPage';
+import FitbitCallbackPage from './pages/FitbitCallbackPage'; // 1. Import the new page
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -50,12 +51,10 @@ function App() {
           </ProtectedRoute>
         } 
       />
-      {/* 2. Add the new route for the BMI calculator */}
       <Route 
         path="/bmi-calculator" 
         element={ <ProtectedRoute user={user}><BMICalculatorPage user={user} /></ProtectedRoute> } 
       />
-      {/** Daily Wellness Tracker */}
       <Route 
         path="/wellness-tracker" 
         element={ <ProtectedRoute user={user}><DailyWellnessPage /></ProtectedRoute> } 
@@ -87,6 +86,11 @@ function App() {
       <Route 
         path="/weekly-summary" 
         element={ <ProtectedRoute user={user}><WeeklySummaryPage /></ProtectedRoute> } 
+      />
+      {/* 2. Add the route for the Fitbit Callback */}
+      <Route 
+        path="/callback" 
+        element={ <ProtectedRoute user={user}><FitbitCallbackPage /></ProtectedRoute> } 
       />
     </Routes>
   );
