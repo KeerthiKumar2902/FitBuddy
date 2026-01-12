@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import NutritionDetailModal from '../components/wellness/NutritionDetailModal';
+import NutritionDetailModal from '../components/nutirtion/NutritionDetailModal';
 import featuredFoods from '../data/featuredFoods.json';
 
 const API_KEY = import.meta.env.VITE_SPOONACULAR_API_KEY;
