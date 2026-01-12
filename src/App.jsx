@@ -15,6 +15,9 @@ import ExercisePlansPage from './pages/ExercisePlansPage';
 import NutritionHubPage from './pages/NutritionHubPage';
 import WeeklySummaryPage from './pages/WeeklySummaryPage';
 import FitbitCallbackPage from './pages/FitbitCallbackPage'; // 1. Import the new page
+import PlansDashboard from './pages/ExercisePlanner/PlansDashboard';
+import PlanEditor from './pages/ExercisePlanner/PlanEditor';
+import PlanViewer from './pages/ExercisePlanner/PlanViewer';
 
 // A custom component to protect routes that require authentication
 const ProtectedRoute = ({ user, children }) => {
@@ -92,6 +95,11 @@ function App() {
         path="/callback" 
         element={ <ProtectedRoute user={user}><FitbitCallbackPage /></ProtectedRoute> } 
       />
+      {/* Exercise Planner Routes */}
+      <Route path="/exercise-plans" element={<ProtectedRoute user={user}><PlansDashboard /></ProtectedRoute>} />
+      <Route path="/exercise-plans/create" element={<ProtectedRoute user={user}><PlanEditor /></ProtectedRoute>} />
+      <Route path="/exercise-plans/:id/edit" element={<ProtectedRoute user={user}><PlanEditor /></ProtectedRoute>} />
+      <Route path="/exercise-plans/:id" element={<ProtectedRoute user={user}><PlanViewer /></ProtectedRoute>} />
     </Routes>
   );
 }
