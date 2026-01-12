@@ -68,11 +68,25 @@ const PlansDashboard = () => {
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-2 pt-4 border-t border-gray-50">
-                  <Link to={`/exercise-plans/${plan.id}`} className="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-semibold text-center hover:bg-blue-100">View</Link>
-                  <Link to={`/exercise-plans/${plan.id}/edit`} className="flex-1 bg-green-50 text-green-700 py-2 rounded-lg font-semibold text-center hover:bg-green-100">Edit</Link>
-                  <button onClick={() => handleDelete(plan.id)} className="px-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
+
+                {/* --- START WORKOUT BUTTON ADDED HERE --- */}
+                <div className="space-y-3 pt-4 border-t border-gray-50">
+                  <Link 
+                    to={`/exercise-plans/${plan.id}/active`}
+                    className="block w-full text-center bg-green-600 text-white py-2.5 rounded-lg font-bold shadow-sm hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                    Start Workout
+                  </Link>
+
+                  <div className="flex gap-2">
+                    <Link to={`/exercise-plans/${plan.id}`} className="flex-1 bg-blue-50 text-blue-700 py-2 rounded-lg font-semibold text-center hover:bg-blue-100">View</Link>
+                    <Link to={`/exercise-plans/${plan.id}/edit`} className="flex-1 bg-green-50 text-green-700 py-2 rounded-lg font-semibold text-center hover:bg-green-100">Edit</Link>
+                    <button onClick={() => handleDelete(plan.id)} className="px-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
+                  </div>
                 </div>
+                {/* --- END BUTTON SECTION --- */}
+
               </div>
             ))}
           </div>
