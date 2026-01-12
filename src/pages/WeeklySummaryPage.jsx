@@ -1,241 +1,295 @@
-// src/pages/WeeklySummaryPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { auth, db } from '../firebase';
-import { collection, query, where, getDocs, doc, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+} from 'recharts';
 
-// --- 1. ADDED THIS CONSTANT ---
-const DEFAULT_GOALS = {
-  waterIntake: { label: 'Water Intake', target: 8 },
-  activityMinutes: { label: 'Activity', target: 30 },
-  sleepHours: { label: 'Sleep', target: 8 },
-  mindfulnessMinutes: { label: 'Mindfulness', target: 10 },
-  screenTimeHours: { label: 'Screen Time', target: 2 },
+// --- CONFIGURATION ---
+const METRICS = {
+  steps: { label: 'Steps', color: '#10B981', unit: '' },
+  calories: { label: 'Calories', color: '#EF4444', unit: 'kcal' },
+  activeMinutes: { label: 'Active', color: '#F59E0B', unit: 'min' },
+  sleepHours: { label: 'Sleep', color: '#6366F1', unit: 'hr' },
+  waterIntake: { label: 'Water', color: '#3B82F6', unit: 'gls' },
+  mindfulnessMinutes: { label: 'Mindfulness', color: '#8B5CF6', unit: 'min' },
 };
 
-// --- 2. FULL SPINNER COMPONENT ---
+// --- COMPONENTS ---
 const Spinner = () => (
-  <svg className="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-  </svg>
+  <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+  </div>
 );
 
-// --- 3. FULL STATCARD COMPONENT ---
-const StatCard = ({ title, value, icon, unit }) => (
-  <div className="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-    <div className="flex-shrink-0">{icon}</div>
+const StatCard = ({ title, value, subtext, icon, color }) => (
+  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+    <div className={`p-3 rounded-xl ${color} bg-opacity-10 text-${color.replace('bg-', '')}`}>
+      {icon}
+    </div>
     <div>
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="text-3xl font-bold text-gray-800">
-        {value}
-        {unit && <span className="text-lg font-normal ml-1">{unit}</span>}
-      </p>
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{title}</p>
+      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      {subtext && <p className="text-xs text-gray-500">{subtext}</p>}
     </div>
   </div>
 );
 
 const WeeklySummaryPage = () => {
-  const [goalTargets, setGoalTargets] = useState(DEFAULT_GOALS);
-  const [weekProgress, setWeekProgress] = useState([]);
-  const [bmiHistory, setBmiHistory] = useState([]);
+  const [goals, setGoals] = useState({});
+  const [weekData, setWeekData] = useState([]);
+  const [bmiData, setBmiData] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = auth.currentUser;
 
   useEffect(() => {
     if (!user) return;
-
     setLoading(true);
-    
-    const goalRef = doc(db, "users", user.uid);
-    const unsubGoals = onSnapshot(goalRef, (docSnap) => {
-      const savedGoals = docSnap.data()?.goalTargets;
-      if (savedGoals) {
-        setGoalTargets(prevDefaults => ({ ...prevDefaults, ...savedGoals }));
-      } else {
-        setGoalTargets(DEFAULT_GOALS);
-      }
+
+    // 1. Fetch User Goals
+    const unsubGoals = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+      setGoals(docSnap.data()?.goalTargets || {});
     });
 
+    // 2. Fetch Last 7 Days of Progress
     const today = new Date();
-    const sevenDaysAgo = new Date(new Date().setDate(today.getDate() - 7));
-    const progressRef = collection(db, "users", user.uid, "dailyProgress");
-    const qProgress = query(progressRef, where("timestamp", ">=", sevenDaysAgo));
-    
-    const bmiRef = collection(db, "users", user.uid, "bmiHistory");
-    const qBmi = query(bmiRef, orderBy("timestamp", "desc"), where("timestamp", ">=", sevenDaysAgo));
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    const dateString = sevenDaysAgo.toISOString().split('T')[0];
 
-    Promise.all([
-      getDocs(qProgress),
-      getDocs(qBmi)
-    ]).then(([progressSnap, bmiSnap]) => {
-      const progressData = progressSnap.docs.map(d => d.data());
-      const bmiData = bmiSnap.docs.map(d => d.data());
-      
-      setWeekProgress(progressData);
-      setBmiHistory(bmiData.reverse());
+    // Note: Firestore string comparison works for ISO dates
+    const qProgress = query(
+      collection(db, "users", user.uid, "dailyProgress"),
+      where("__name__", ">=", dateString), // Filter by Doc ID (Date)
+      limit(7)
+    );
+
+    // 3. Fetch BMI History
+    const qBmi = query(
+      collection(db, "users", user.uid, "bmiHistory"),
+      orderBy("timestamp", "desc"),
+      limit(5)
+    );
+
+    Promise.all([getDocs(qProgress), getDocs(qBmi)]).then(([progSnap, bmiSnap]) => {
+      // Map Progress Data
+      const progressDocs = progSnap.docs.map(doc => ({ date: doc.id, ...doc.data() }));
+      // Sort by date ascending for charts
+      progressDocs.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setWeekData(progressDocs);
+
+      // Map BMI Data
+      const bmiDocs = bmiSnap.docs.map(doc => ({
+        date: doc.data().timestamp?.toDate().toLocaleDateString() || 'N/A',
+        bmi: doc.data().bmi
+      })).reverse(); // Oldest first for chart
+      setBmiData(bmiDocs);
+
       setLoading(false);
     });
 
     return () => unsubGoals();
   }, [user]);
 
-  const summaryData = useMemo(() => {
-    if (weekProgress.length === 0) {
-      return null;
-    }
-    
-    let totalGoalsMet = 0;
-    let totalActivity = 0;
-    let totalSleep = 0;
-    let totalWater = 0;
-    let journalEntries = 0;
-    const moodCounts = {};
-    const goalAdherence = {
-      waterIntake: 0,
-      activityMinutes: 0,
-      sleepHours: 0,
-      mindfulnessMinutes: 0,
-      screenTimeHours: 0,
-    };
+  // --- AGGREGATION LOGIC ---
+  const summary = useMemo(() => {
+    if (!weekData.length) return null;
 
-    weekProgress.forEach(day => {
-      if (day.waterIntake >= (goalTargets.waterIntake?.target || 0)) goalAdherence.waterIntake++;
-      if (day.activityMinutes >= (goalTargets.activityMinutes?.target || 0)) goalAdherence.activityMinutes++;
-      if (day.sleepHours >= (goalTargets.sleepHours?.target || 0)) goalAdherence.sleepHours++;
-      if (day.mindfulnessMinutes >= (goalTargets.mindfulnessMinutes?.target || 0)) goalAdherence.mindfulnessMinutes++;
-      if (day.screenTimeHours <= (goalTargets.screenTimeHours?.target || 0)) goalAdherence.screenTimeHours++;
-      
-      totalActivity += day.activityMinutes || 0;
-      totalSleep += day.sleepHours || 0;
-      totalWater += day.waterIntake || 0;
-      if (day.journal) journalEntries++;
+    const totals = { steps: 0, calories: 0, activeMinutes: 0, sleepHours: 0, waterIntake: 0 };
+    let journalCount = 0;
+    const moodCounts = {};
+
+    weekData.forEach(day => {
+      totals.steps += day.steps || 0;
+      totals.calories += day.calories || 0;
+      totals.activeMinutes += day.activeMinutes || 0;
+      totals.sleepHours += day.sleepHours || 0;
+      totals.waterIntake += day.waterIntake || 0;
+      if (day.journal) journalCount++;
       if (day.mood) moodCounts[day.mood] = (moodCounts[day.mood] || 0) + 1;
     });
-    
-    totalGoalsMet = Object.values(goalAdherence).reduce((a, b) => a + b, 0);
-    
-    const dominantMood = Object.keys(moodCounts).length > 0
-      ? Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]
-      : null;
-      
-    const moodChartData = Object.entries(moodCounts).map(([name, value]) => ({ name, value }));
-    
-    return {
-      totalGoalsMet,
-      avgActivity: (totalActivity / Math.max(weekProgress.length, 1)).toFixed(0),
-      avgSleep: (totalSleep / Math.max(weekProgress.length, 1)).toFixed(1),
-      avgWater: (totalWater / Math.max(weekProgress.length, 1)).toFixed(1),
-      journalEntries,
-      dominantMood,
-      moodChartData,
-      goalAdherence,
+
+    const days = weekData.length;
+    const averages = {
+      steps: Math.round(totals.steps / days),
+      calories: Math.round(totals.calories / days),
+      sleep: (totals.sleepHours / days).toFixed(1),
+      water: Math.round(totals.waterIntake / days)
     };
-  }, [weekProgress, goalTargets]);
 
-  const bmiChartData = useMemo(() => {
-    return bmiHistory.map(entry => ({
-      date: entry.timestamp?.toDate().toLocaleDateString() || 'N/A',
-      bmi: entry.bmi
-    }));
-  }, [bmiHistory]);
+    const dominantMood = Object.keys(moodCounts).sort((a, b) => moodCounts[b] - moodCounts[a])[0];
 
+    return { totals, averages, journalCount, dominantMood };
+  }, [weekData]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Spinner />
-      </div>
-    );
-  }
+  // --- CHART FORMATTERS ---
+  const formatXAxis = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
 
-  if (!summaryData) {
-    return (
-      <div className="text-center p-10 max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Not Enough Data Yet</h2>
-        <p className="mb-6">Start tracking your daily habits in the "Daily Wellness Tracker" to see your weekly summary here!</p>
-        <Link to="/wellness-tracker" className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">
-          Start Tracking
-        </Link>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Spinner /></div>;
+
+  if (!summary) return (
+    <div className="min-h-screen bg-gray-50 p-10 text-center">
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">No Data Yet</h2>
+      <p className="text-gray-500 mb-6">Start tracking your week to see insights!</p>
+      <Link to="/wellness-tracker" className="bg-green-600 text-white px-6 py-2 rounded-lg">Go to Tracker</Link>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8 pb-20">
       <div className="max-w-7xl mx-auto">
-        <Link to="/" className="text-green-600 hover:underline mb-6 block">&larr; Back to Dashboard</Link>
-        <div className="text-left mb-10">
-          <h1 className="text-4xl font-bold text-gray-800">Your Weekly Summary</h1>
-          <p className="text-lg text-gray-600">Here's how you did over the past 7 days. Keep it up!</p>
+        
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+             <Link to="/" className="text-gray-500 hover:text-green-600 font-medium mb-1 inline-block">&larr; Dashboard</Link>
+             <h1 className="text-3xl font-bold text-gray-900">Weekly Report</h1>
+             <p className="text-gray-500">Overview of your last 7 active days</p>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-sm font-semibold text-gray-600">
+             {weekData.length} Days Logged
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard title="Total Goals Met" value={summaryData.totalGoalsMet} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-          <StatCard title="Avg. Activity" value={summaryData.avgActivity} unit="mins" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>} />
-          <StatCard title="Avg. Sleep" value={summaryData.avgSleep} unit="hrs" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>} />
+        {/* TOP STATS ROW */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+           <StatCard 
+             title="Avg Steps" 
+             value={summary.averages.steps} 
+             subtext={`Total: ${(summary.totals.steps / 1000).toFixed(1)}k`}
+             color="bg-emerald-100 text-emerald-600"
+             icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+           />
+           <StatCard 
+             title="Avg Calories" 
+             value={summary.averages.calories} 
+             subtext="kcal / day"
+             color="bg-red-100 text-red-600"
+             icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /></svg>}
+           />
+           <StatCard 
+             title="Avg Sleep" 
+             value={summary.averages.sleep} 
+             subtext="hours / night"
+             color="bg-indigo-100 text-indigo-600"
+             icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
+           />
+           <StatCard 
+             title="Total Active" 
+             value={summary.totals.activeMinutes} 
+             subtext="minutes this week"
+             color="bg-orange-100 text-orange-600"
+             icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Goal Consistency</h3>
-            <div className="space-y-4">
-              {Object.keys(DEFAULT_GOALS).map(key => { // Use DEFAULT_GOALS to ensure all are rendered
-                const goal = DEFAULT_GOALS[key];
-                const achieved = summaryData.goalAdherence[key] || 0;
-                const percentage = (achieved / 7) * 100;
-                return (
-                  <div key={key}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-semibold text-gray-700">{goal.label}</span>
-                      <span className="text-sm font-medium text-gray-500">{achieved} of 7 days</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                      <div className="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full" style={{ width: `${percentage}%` }}></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Mood Report</h3>
-              {summaryData.dominantMood ? (
-                <div className="text-center">
-                  <p className="text-gray-600">Your dominant mood was:</p>
-                  <p className="text-7xl my-2">{summaryData.dominantMood[0]}</p>
-                  <p className="font-semibold text-gray-700">Logged {summaryData.dominantMood[1]} time(s)</p>
-                </div>
-              ) : <p className="text-gray-500">No mood data logged this week.</p>}
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Journal Entries</h3>
-              <p className="text-5xl font-bold text-green-600">{summaryData.journalEntries}</p>
-              <p className="text-gray-600">days logged</p>
-            </div>
-          </div>
-
-          <div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Weight & BMI Trend</h3>
-            {bmiChartData.length > 1 ? (
-              <div className="h-80">
+        {/* CHARTS SECTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+           
+           {/* 1. Activity Chart */}
+           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-6">Activity Trends</h3>
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={bmiChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="bmi" stroke="#4CAF50" strokeWidth={3} activeDot={{ r: 8 }} />
+                  <BarChart data={weekData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={formatXAxis} tick={{fontSize: 12}} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#10B981" />
+                    <YAxis yAxisId="right" orientation="right" stroke="#F59E0B" />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="steps" name="Steps" fill="#10B981" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="activeMinutes" name="Active Mins" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+           </div>
+
+           {/* 2. Sleep Chart */}
+           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-6">Sleep Quality</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weekData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={formatXAxis} tick={{fontSize: 12}} />
+                    <YAxis domain={[0, 12]} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                    <Line type="monotone" dataKey="sleepHours" name="Hours" stroke="#6366F1" strokeWidth={3} dot={{r: 4}} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            ) : <p className="text-gray-500">Not enough weight data logged this week to show a trend. Keep tracking!</p>}
-          </div>
+           </div>
+        </div>
+
+        {/* BOTTOM SECTION: Habits & Weight */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           
+           {/* Habit Consistency */}
+           <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Habit Consistency</h3>
+              <div className="space-y-5">
+                 {['waterIntake', 'mindfulnessMinutes', 'screenTimeHours'].map(key => {
+                    const goal = goals[key]?.target || (key === 'screenTimeHours' ? 2 : 10); // Defaults
+                    const label = METRICS[key]?.label || key;
+                    const color = METRICS[key]?.color || '#9CA3AF';
+                    
+                    // Logic: Count days where goal was met
+                    const daysMet = weekData.filter(d => {
+                        const val = d[key] || 0;
+                        return key === 'screenTimeHours' ? (val > 0 && val <= goal) : val >= goal;
+                    }).length;
+                    
+                    const percent = (daysMet / Math.max(weekData.length, 1)) * 100;
+
+                    return (
+                       <div key={key}>
+                          <div className="flex justify-between mb-1 text-sm">
+                             <span className="font-semibold text-gray-700">{label}</span>
+                             <span className="text-gray-500">{daysMet}/{weekData.length} days met</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2.5">
+                             <div 
+                               className="h-2.5 rounded-full transition-all duration-1000" 
+                               style={{ width: `${percent}%`, backgroundColor: color }}
+                             ></div>
+                          </div>
+                       </div>
+                    )
+                 })}
+              </div>
+           </div>
+
+           {/* Weight & Mood */}
+           <div className="space-y-6">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                 <h3 className="text-lg font-bold text-gray-800 mb-4">Mood</h3>
+                 <div className="text-center py-4">
+                    <span className="text-6xl">{summary.dominantMood || '😐'}</span>
+                    <p className="text-sm text-gray-500 mt-2 font-medium">Most frequent mood</p>
+                 </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                 <h3 className="text-lg font-bold text-gray-800 mb-2">Weight Trend</h3>
+                 {bmiData.length > 0 ? (
+                    <div className="h-32">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={bmiData}>
+                                <Tooltip />
+                                <Line type="monotone" dataKey="bmi" stroke="#10B981" strokeWidth={2} dot={false} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                 ) : (
+                    <p className="text-sm text-gray-400 py-4">Log your weight in BMI Calculator to see trends.</p>
+                 )}
+              </div>
+           </div>
 
         </div>
       </div>
