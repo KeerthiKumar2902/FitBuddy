@@ -73,9 +73,7 @@ const PlanEditor = () => {
   };
 
   // 3. REFACTORED GENERATE FUNCTION (Accepts params from Modal)
-  const handleAIGenerate = async (userGoal, userEquipment) => {
-    // Note: We don't set loading state here because the Modal handles the "Processing" UI
-    // But we keep isGenerating for the button spinner if needed
+  const handleAIGenerate = async (userGoal, userEquipment, userDuration) => {
     setIsGenerating(true); 
 
     try {
@@ -84,7 +82,7 @@ const PlanEditor = () => {
       const response = await generateWorkout({ 
         goal: userGoal, 
         equipment: userEquipment, 
-        duration: 45, 
+        duration: userDuration || 45, // Use the input or default
         availableExercises: exercisesData.map(e => ({ name: e.name })) 
       });
 
@@ -112,13 +110,13 @@ const PlanEditor = () => {
       } else {
         setCurrentPlan(prev => [...prev, ...newExercises]);
         setMobileTab('builder'); 
-        setIsAIModalOpen(false); // Close modal on success
+        setIsAIModalOpen(false); // Close on success
       }
 
     } catch (error) {
       console.error("AI Error:", error);
       alert(`AI Generation Failed: ${error.message}`);
-      setIsAIModalOpen(false); // Close on error too
+      setIsAIModalOpen(false);
     } finally {
       setIsGenerating(false);
     }
