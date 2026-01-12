@@ -19,7 +19,7 @@ const SleepBar = ({ label, minutes, color, totalMinutes }) => {
   );
 };
 
-const SleepStagesCard = ({ totalHours, stages, source, isLoading, isEditingGoals, sleepGoal, setGoalTargets }) => {
+const SleepStagesCard = ({ totalHours, stages, source, isLoading, isEditingGoals, sleepGoal, setGoalTargets, onEditValue }) => {
   if (isLoading) return <div className="h-48 bg-white rounded-2xl shadow-sm animate-pulse"></div>;
 
   const totalMinutes = (stages?.deep || 0) + (stages?.light || 0) + (stages?.rem || 0) + (stages?.awake || 0) || 1;
@@ -38,7 +38,7 @@ const SleepStagesCard = ({ totalHours, stages, source, isLoading, isEditingGoals
         <div>
           <h3 className="font-bold text-gray-800 text-lg leading-tight">Sleep</h3>
           
-          {/* EDITABLE GOAL SECTION */}
+          {/* EDITABLE GOAL */}
           <div className="text-xs text-gray-500 flex items-center gap-1">
             Goal: 
             {isEditingGoals ? (
@@ -56,8 +56,14 @@ const SleepStagesCard = ({ totalHours, stages, source, isLoading, isEditingGoals
         </div>
       </div>
 
-      <div className="mb-6">
-         <p className="text-3xl font-extrabold text-indigo-900">{totalHours} <span className="text-sm font-normal text-gray-500">hrs</span></p>
+      {/* --- ACTUAL VALUE (Clickable) --- */}
+      <div className="mb-6 group cursor-pointer w-fit" onClick={onEditValue} title="Click to manually edit sleep hours">
+         <p className="text-3xl font-extrabold text-indigo-900 flex items-center gap-2 group-hover:text-indigo-700 transition-colors">
+            {totalHours} 
+            <span className="text-sm font-normal text-gray-500">hrs total</span>
+            {/* Pencil Icon on Hover */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+         </p>
       </div>
 
       {/* Visual Sleep Stages */}

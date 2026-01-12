@@ -1,4 +1,3 @@
-// src/pages/DailyWellnessPage.jsx
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, getDoc } from 'firebase/firestore';
@@ -19,7 +18,7 @@ const BIO_GOALS = {
   steps: { label: 'Steps', target: 10000, unit: 'steps', increment: 500 },
   calories: { label: 'Calories', target: 2500, unit: 'kcal', increment: 50 },
   activeMinutes: { label: 'Active Mins', target: 30, unit: 'mins', increment: 10 },
-  sleepHours: { label: 'Sleep', target: 8, unit: 'hrs', increment: 0.5 }, // ADDED SLEEP GOAL
+  sleepHours: { label: 'Sleep', target: 8, unit: 'hrs', increment: 0.5 },
 };
 
 const HABIT_GOALS = {
@@ -49,7 +48,7 @@ const DailyWellnessPage = () => {
   });
 
   const [goalTargets, setGoalTargets] = useState(DEFAULT_GOALS);
-  const [isEditingGoals, setIsEditingGoals] = useState(false); // Global Edit Mode
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [toast, setToast] = useState(null);
@@ -107,16 +106,25 @@ const DailyWellnessPage = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // --- FIXED: Correct Source Keys for Smart Sync ---
   const updateProgress = async (field, value) => {
     const newValue = typeof value === 'string' ? value : Math.max(0, value);
-    setProgress(prev => ({ ...prev, [field]: newValue, [`${field}Source`]: 'manual' }));
     
-    if (progress[`${field}Source`] === 'fitbit') showToast("Manual edit saved. Value locked from sync.");
+    // MAP FIELD NAMES TO THE CORRECT SOURCE KEYS
+    let sourceKey = `${field}Source`; 
+    if (field === 'sleepHours') sourceKey = 'sleepSource';       // Fixed!
+    if (field === 'activeMinutes') sourceKey = 'activeSource';   // Fixed!
+    if (field === 'restingHeartRate') sourceKey = 'heartRateSource'; // Fixed!
+
+    setProgress(prev => ({ ...prev, [field]: newValue, [sourceKey]: 'manual' }));
+    
+    // Alert user about the lock
+    showToast(`Updated! ${field} is now locked from sync.`);
 
     const docRef = doc(db, "users", user.uid, "dailyProgress", formattedDate);
     await setDoc(docRef, { 
       [field]: newValue, 
-      [`${field}Source`]: 'manual',
+      [sourceKey]: 'manual', // Use the corrected source key
       timestamp: serverTimestamp() 
     }, { merge: true });
   };
@@ -140,22 +148,114 @@ const DailyWellnessPage = () => {
 
   const handleConnectFitbit = () => window.location.href = getFitbitAuthUrl();
 
-  // --- SMART SYNC (Simplified for brevity, logic unchanged) ---
+  // --- SMART SYNC LOGIC ---
   const performSmartSync = async (datesToSync) => {
     setIsSyncing(true);
     try {
       const tokenRef = doc(db, 'users', user.uid, 'private', 'fitbit_tokens');
       const tokenSnap = await getDoc(tokenRef);
+
       if (!tokenSnap.exists()) {
         showToast("No Fitbit connection found.");
         setIsFitbitConnected(false);
+        setIsSyncing(false);
         return;
       }
-      // ... (Existing sync logic remains here) ...
-      // For brevity, assuming existing logic works
-      showToast("Sync logic executed (placeholder)");
+
+      let { accessToken, refreshToken } = tokenSnap.data();
+
+      const processDate = async (token, date) => {
+        const fitbitData = await fetchFitbitDataForDate(token, date);
+        
+        if (fitbitData && fitbitData.activity && fitbitData.sleep) {
+          // 1. Check current data for locks
+          const dailyRef = doc(db, "users", user.uid, "dailyProgress", date);
+          const dailySnap = await getDoc(dailyRef);
+          const currentData = dailySnap.exists() ? dailySnap.data() : {};
+
+          const summary = fitbitData.activity.summary;
+          const mainSleep = fitbitData.sleep.sleep?.[0];
+          
+          let sleepStages = { deep: 0, light: 0, rem: 0, awake: 0 };
+          if (mainSleep?.levels?.summary) {
+            sleepStages = {
+              deep: mainSleep.levels.summary.deep?.minutes || 0,
+              light: mainSleep.levels.summary.light?.minutes || 0,
+              rem: mainSleep.levels.summary.rem?.minutes || 0,
+              awake: mainSleep.levels.summary.wake?.minutes || 0
+            };
+          }
+
+          // 2. Prepare Updates (Respecting Manual Locks)
+          const updates = {
+            syncStatus: { isConnected: true, lastSynced: new Date().toISOString() },
+            timestamp: serverTimestamp()
+          };
+
+          if (currentData.stepsSource !== 'manual') {
+            updates.steps = summary.steps || 0;
+            updates.stepsSource = 'fitbit';
+            updates.distanceKm = summary.distances?.find(d => d.activity === 'total')?.distance || 0;
+            updates.elevation = summary.elevation || 0;
+            updates.sedentaryMinutes = summary.sedentaryMinutes || 0;
+            updates.lightlyActiveMinutes = summary.lightlyActiveMinutes || 0;
+          }
+
+          if (currentData.caloriesSource !== 'manual') {
+            updates.calories = summary.caloriesOut || 0;
+            updates.caloriesSource = 'fitbit';
+          }
+
+          if (currentData.activeSource !== 'manual') {
+            updates.activeMinutes = (summary.fairlyActiveMinutes || 0) + (summary.veryActiveMinutes || 0);
+            updates.activeSource = 'fitbit';
+          }
+
+          if (currentData.sleepSource !== 'manual') {
+            updates.sleepHours = mainSleep ? (mainSleep.duration / (1000 * 60 * 60)).toFixed(1) : 0;
+            updates.sleepStages = sleepStages;
+            updates.sleepSource = 'fitbit';
+          }
+
+          if (currentData.heartRateSource !== 'manual') {
+            updates.restingHeartRate = fitbitData.heart?.['activities-heart']?.[0]?.value?.restingHeartRate || 0;
+            updates.heartRateSource = 'fitbit';
+          }
+
+          await setDoc(dailyRef, updates, { merge: true });
+          console.log(`Synced data for ${date}`);
+        }
+      };
+
+      for (const date of datesToSync) {
+        try {
+          await processDate(accessToken, date);
+        } catch (error) {
+          if (error.message.includes('401') || error.status === 401) {
+            try {
+              const newTokens = await refreshFitbitToken(refreshToken);
+              await setDoc(tokenRef, {
+                accessToken: newTokens.access_token,
+                refreshToken: newTokens.refresh_token,
+                expiresIn: newTokens.expires_in,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+              
+              accessToken = newTokens.access_token;
+              refreshToken = newTokens.refresh_token;
+              await processDate(accessToken, date);
+            } catch (refreshError) {
+              showToast("Connection expired. Please reconnect.");
+              setIsFitbitConnected(false);
+              return; 
+            }
+          }
+        }
+      }
+      showToast("Sync complete!");
     } catch (error) {
       console.error("Sync Error:", error);
+      showToast("Sync failed.");
     } finally {
       setIsSyncing(false);
     }
@@ -185,7 +285,6 @@ const DailyWellnessPage = () => {
         <div className="flex justify-between items-center mb-6">
             <Link to="/" className="text-green-600 hover:underline font-medium">&larr; Back to Dashboard</Link>
             
-            {/* GLOBAL GOAL EDIT CONTROLS */}
             <div className="flex gap-2">
                 {isEditingGoals ? (
                     <>
@@ -220,8 +319,8 @@ const DailyWellnessPage = () => {
               calories={progress.calories} calorieGoal={goalTargets.calories?.target || 2500}
               loading={loading}
               updateProgress={updateProgress}
-              isEditingGoals={isEditingGoals} // PASSING EDIT STATE
-              setGoalTargets={setGoalTargets} // PASSING SETTER
+              isEditingGoals={isEditingGoals}
+              setGoalTargets={setGoalTargets}
               goalTargets={goalTargets}
             />
 
@@ -231,9 +330,13 @@ const DailyWellnessPage = () => {
                   stages={progress.sleepStages}
                   source={progress.sleepSource}
                   isLoading={loading}
-                  isEditingGoals={isEditingGoals} // PASSING EDIT STATE
-                  sleepGoal={goalTargets.sleepHours?.target || 8} // PASSING TARGET
-                  setGoalTargets={setGoalTargets} // PASSING SETTER
+                  isEditingGoals={isEditingGoals}
+                  sleepGoal={goalTargets.sleepHours?.target || 8}
+                  setGoalTargets={setGoalTargets}
+                  onEditValue={() => {
+                      const val = prompt("Enter Sleep Hours:", progress.sleepHours);
+                      if (val !== null) updateProgress('sleepHours', parseFloat(val) || 0);
+                  }}
                />
                <HeartRateCard 
                   value={progress.restingHeartRate} 
@@ -247,8 +350,9 @@ const DailyWellnessPage = () => {
               goalTargets={goalTargets}
               setGoalTargets={setGoalTargets}
               updateProgress={updateProgress}
-              isEditingGoals={isEditingGoals} // PASSING EDIT STATE
-              // Removed local button handlers since they are now global
+              isEditingGoals={isEditingGoals}
+              setIsEditingGoals={setIsEditingGoals}
+              handleSaveGoals={handleSaveGoals}
               HABIT_GOALS={HABIT_GOALS} 
             />
           </div>
