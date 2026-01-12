@@ -1,12 +1,20 @@
 // functions/index.js
 const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https"); // New Import for AI
 const admin = require("firebase-admin");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
+const { GoogleGenerativeAI } = require("@google/generative-ai"); // New Import for AI
 require("dotenv").config(); 
 
 admin.initializeApp();
 
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// ==========================================
+// 1. EXISTING FITBIT INTEGRATION
+// ==========================================
 exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     
@@ -61,7 +69,6 @@ exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
         return res.status(200).json(response.data);
       } catch (error) {
         console.error("Refresh Error:", error.response?.data);
-        // Return the specific status code (e.g., 400 or 401) so frontend knows it failed
         return res.status(error.response?.status || 500).json({ 
           error: "Failed to refresh token", 
           details: error.response?.data 
@@ -83,7 +90,6 @@ exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
         });
         return res.status(200).json(response.data);
       } catch (error) {
-        // Pass the 401 error back to frontend so we know to refresh
         return res.status(error.response?.status || 500).json({ 
           error: "Failed to fetch data", 
           details: error.response?.data 
@@ -93,4 +99,54 @@ exports.exchangeFitbitToken = functions.https.onRequest((req, res) => {
 
     return res.status(400).json({ error: "Invalid action" });
   });
+});
+
+// ==========================================
+// 2. NEW AI WORKOUT GENERATOR
+// ==========================================
+exports.generateWorkoutPlan = onCall(async (request) => {
+  // 1. Extract Data from Frontend
+  const { goal, equipment, duration, availableExercises } = request.data;
+
+  if (!goal || !availableExercises) {
+    throw new HttpsError('invalid-argument', 'Goal and Exercise List are required.');
+  }
+
+  try {
+    // 2. Prepare the Prompt
+    const exerciseNames = availableExercises.map(e => e.name).join(", ");
+
+    const prompt = `
+      Act as an expert fitness trainer. Create a ${duration}-minute workout plan for a user.
+      
+      User Goal: "${goal}"
+      Equipment Available: "${equipment || 'Bodyweight'}"
+      
+      CRITICAL INSTRUCTIONS:
+      1. You must ONLY select exercises from this specific list: [${exerciseNames}]. Do not invent new exercises.
+      2. Return the response PURELY as a JSON array. Do not add markdown formatting (like \`\`\`json).
+      3. Structure the JSON exactly like this:
+      [
+        { "exerciseName": "Exact Name From List", "sets": 3, "reps": 12, "notes": "Focus on form" },
+        ...
+      ]
+    `;
+
+    // 3. Call Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // 4. Clean and Parse JSON
+    // Remove potential markdown blocks AI might add
+    const jsonString = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const workoutPlan = JSON.parse(jsonString);
+
+    return { workoutPlan };
+
+  } catch (error) {
+    console.error("AI Generation Error", error);
+    throw new HttpsError('internal', 'Failed to generate workout plan.');
+  }
 });
