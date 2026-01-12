@@ -40,20 +40,22 @@ const ExerciseLibrary = ({ addToPlan }) => {
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       <div className="p-4 border-b border-gray-100 bg-white space-y-3">
         <input type="text" placeholder="Search exercises..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-        <div className="grid grid-cols-3 gap-2">
+        
+        {/* RESPONSIVE GRID: 2 cols on mobile, 3 on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {[
             { val: selectedMuscle, set: setSelectedMuscle, opts: filterOptions.muscles, label: "Muscles" },
             { val: selectedEquipment, set: setSelectedEquipment, opts: filterOptions.equipment, label: "Equipment" },
             { val: selectedLevel, set: setSelectedLevel, opts: filterOptions.levels, label: "Level" }
           ].map((f, i) => (
-            <select key={i} value={f.val} onChange={(e) => f.set(e.target.value)} className="w-full p-2 text-xs border rounded-md outline-none">
+            <select key={i} value={f.val} onChange={(e) => f.set(e.target.value)} className="w-full p-2 text-xs border rounded-md outline-none bg-white">
               <option value="All">All {f.label}</option>
               {f.opts.map(o => o !== 'All' && <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
             </select>
           ))}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar pb-20 md:pb-3">
         {displayedExercises.map(ex => (
           <div key={ex.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg group hover:bg-white hover:shadow-md border border-transparent hover:border-green-100 transition-all">
              <div className="w-12 h-12 flex-shrink-0 bg-white rounded overflow-hidden border border-gray-100 relative">
@@ -65,7 +67,7 @@ const ExerciseLibrary = ({ addToPlan }) => {
                <p className="font-semibold text-gray-800 text-sm truncate">{ex.name}</p>
                <p className="text-xs text-gray-500 truncate capitalize">{ex.primaryMuscles[0]} • {ex.equipment || 'Body'}</p>
              </div>
-             <button onClick={() => addToPlan(ex)} className="w-8 h-8 flex items-center justify-center rounded-full text-green-600 bg-green-50 hover:bg-green-100">
+             <button onClick={() => addToPlan(ex)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-green-600 bg-green-50 hover:bg-green-100 active:scale-90 transition-transform">
                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
              </button>
           </div>
